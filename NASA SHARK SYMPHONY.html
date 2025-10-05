@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🦈 Shark Symphony Simulation (Single Shark, 3 Layers)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; background: #e0f7fa; margin: 0; padding: 0;}
+    header { padding: 2em 0; text-align: center; background: #00838f; color: #fff;}
+    main { display: flex; flex-direction: column; align-items: center; }
+    section { margin: 2em 0; width: 80%; max-width: 600px;}
+    h2 { color: #00838f; }
+    .card { border: 2px solid #00838f; border-radius: 8px; padding: 1em; background: #fff; }
+    button { background: #00838f; color: #fff; padding: 0.5em 1em; border-radius: 4px; border: none; cursor: pointer;}
+    button:hover { background: #006978; }
+    .map-area { background: #b2ebf2; height: 220px; position: relative; border-radius: 8px; margin-bottom: 1em;}
+    .shark-dot { position: absolute; width: 28px; height: 28px; background: #00838f; border-radius: 50%; color: #fff; text-align: center; line-height: 28px; font-weight: bold; border: 2px solid #fff; font-size: 18px;}
+    ul { padding-left: 1em; }
+    .layers { display: flex; justify-content: space-between; margin-bottom: 1em;}
+    .layer-bar { height: 14px; border-radius: 4px; margin-right: 3px; flex: 1;}
+    .layer-label { font-size: 13px; color: #006978;}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🦈 Shark Symphony Simulation</h1>
+    <p>Shark swims, senses, and samples ocean layers in real time!</p>
+  </header>
+  <main>
+    <!-- Shark Map Simulation -->
+    <section>
+      <h2>🌍 Shark Journey Simulation</h2>
+      <div class="card">
+        <div class="map-area" id="map-area"></div>
+        <div class="layers">
+          <div>
+            <div class="layer-label">Chlorophyll-a</div>
+            <div id="chl-bar" class="layer-bar" style="background:#43a047"></div>
+          </div>
+          <div>
+            <div class="layer-label">SST</div>
+            <div id="sst-bar" class="layer-bar" style="background:#0288d1"></div>
+          </div>
+          <div>
+            <div class="layer-label">Eddy</div>
+            <div id="eddy-bar" class="layer-bar" style="background:#fbc02d"></div>
+          </div>
+        </div>
+        <ul id="shark-list"></ul>
+        <button id="sim-btn">Pause Simulation</button>
+      </div>
+    </section>
+    <!-- Layers Data -->
+    <section>
+      <h2>🌊 Ocean Layers Sampled</h2>
+      <div class="card">
+        <ul>
+          <li>Chlorophyll-a (mg/m³): <span id="chl-data"></span></li>
+          <li>SST (°C): <span id="sst-data"></span></li>
+          <li>Eddy Activity: <span id="eddy-data"></span></li>
+        </ul>
+        <p>Values sampled at shark's current position.</p>
+      </div>
+    </section>
+    <!-- Symphony Player -->
+    <section>
+      <h2>🎶 Real-Time Shark Symphony</h2>
+      <div class="card">
+        <p id="symphony-status">Symphony adapts to shark and ocean data...</p>
+      </div>
+    </section>
+    <!-- Tag Visualizer -->
+    <section>
+      <h2>📊 Shark Tag Data (Live)</h2>
+      <div class="card">
+        <ul>
+          <li>Sound Sensor: <span id="sound-data">-</span></li>
+          <li>Stomach Sensor: <span id="stomach-data">-</span></li>
+          <li>Movement Sensor: <span id="movement-data">-</span></li>
+        </ul>
+        <p>Tag data updates every second.</p>
+      </div>
+    </section>
+    <!-- Conservation CTA -->
+    <section>
+      <h2>🌱 Conservation Call to Action</h2>
+      <div class="card">
+        <p>
+          <strong>“We don’t just track sharks—we listen to them. Shark Symphony turns satellite data into sound, helping us protect what we can’t see.”</strong>
+        </p>
+        <button onclick="window.open('https://www.worldwildlife.org/species/shark', '_blank')">
+          Learn &amp; Share: Save the Sharks
+        </button>
+      </div>
+    </section>
+  </main>
+  <script>
+    // Single shark simulation data
+    const shark = {
+      id: 1, name: "Great White", x: 80, y: 180, color: "#00838f", zone: "Foraging", stomach: "Active", sound: "Low", movement: "Medium"
+    };
+
+    // Environmental layers (simulate as gradient maps)
+    function sampleChl(x,y) {
+      // Simulate chlorophyll: higher near (x<200,y>100)
+      return +(0.2 + 2.4*Math.max(0, 1 - Math.abs(x-160)/320) * (y/200)).toFixed(2); // mg/m³
+    }
+    function sampleSST(x,y) {
+      // Simulate SST: warmer on right side
+      return +(15 + 10*(x/560)).toFixed(2); // °C
+    }
+    function sampleEddy(x,y) {
+      // Simulate eddy: peaks in middle, random pulse
+      let basic = +(Math.abs(Math.sin((x+y)/140))+Math.random()*0.3).toFixed(2);
+      return basic;
+    }
+
+    let simulationRunning = true;
+    const mapWidth = 560, mapHeight = 200;
+
+    function randomStep(val, min, max) {
+      return Math.max(min, Math.min(max, val + Math.floor(Math.random()*21-10)));
+    }
+
+    function updateShark() {
+      // Move: random walk
+      shark.x = randomStep(shark.x, 20, mapWidth-30);
+      shark.y = randomStep(shark.y, 20, mapHeight-30);
+      // Sensor simulation:
+      shark.stomach = Math.random()>0.5 ? "Active" : "Calm";
+      shark.sound = Math.random()>0.7 ? "High" : "Low";
+      shark.movement = ["Slow","Medium","Fast"][Math.floor(Math.random()*3)];
+      shark.zone = shark.movement === "Fast" ? "Foraging" : "Resting";
+      // Sample layers
+      shark.chl = sampleChl(shark.x, shark.y);
+      shark.sst = sampleSST(shark.x, shark.y);
+      shark.eddy = sampleEddy(shark.x, shark.y);
+    }
+
+    function renderMap() {
+      const area = document.getElementById("map-area");
+      area.innerHTML = `<div class="shark-dot" style="left:${shark.x}px;top:${shark.y}px;background:${shark.color};" title="${shark.name}">${shark.name[0]}</div>`;
+      document.getElementById("shark-list").innerHTML =
+        `<li><strong>${shark.name}</strong> — Zone: ${shark.zone}, Movement: ${shark.movement}</li>`;
+      // Render layer bars
+      document.getElementById("chl-bar").style.width = (shark.chl*40)+"px";
+      document.getElementById("sst-bar").style.width = ((shark.sst-15)*18)+"px";
+      document.getElementById("eddy-bar").style.width = (shark.eddy*80)+"px";
+    }
+
+    function renderLayers() {
+      document.getElementById("chl-data").textContent = shark.chl+" mg/m³";
+      document.getElementById("sst-data").textContent = shark.sst+" °C";
+      document.getElementById("eddy-data").textContent = shark.eddy;
+    }
+
+    function renderSensors() {
+      document.getElementById("sound-data").textContent = shark.sound;
+      document.getElementById("stomach-data").textContent = shark.stomach;
+      document.getElementById("movement-data").textContent = shark.movement;
+    }
+
+    function renderSymphony() {
+      const status = document.getElementById("symphony-status");
+      let desc = `Symphony adapts: ${shark.name} is ${shark.zone}, movement ${shark.movement}, sound ${shark.sound}. `;
+      desc += shark.sound === "High" ? "Music is tense!" : "Music is calm.";
+      desc += ` | Chl-a: ${shark.chl} | SST: ${shark.sst} | Eddy: ${shark.eddy}`;
+      status.textContent = desc;
+      // Simulate simple sound: tense/calm
+      if(shark.sound === "High") {
+        let ctx = new (window.AudioContext || window.webkitAudioContext)();
+        let o = ctx.createOscillator(); let g = ctx.createGain();
+        o.type = "square"; o.frequency.value = 440+(shark.chl*20); g.gain.value = 0.07+(shark.eddy*0.03);
+        o.connect(g); g.connect(ctx.destination); o.start();
+        setTimeout(()=>{o.stop();ctx.close();}, 300);
+      } else if (Math.random() > 0.7) {
+        let ctx = new (window.AudioContext || window.webkitAudioContext)();
+        let o = ctx.createOscillator(); let g = ctx.createGain();
+        o.type = "sine"; o.frequency.value = 220+(shark.sst*4); g.gain.value = 0.04+(shark.eddy*0.02);
+        o.connect(g); g.connect(ctx.destination); o.start();
+        setTimeout(()=>{o.stop();ctx.close();}, 200);
+      }
+    }
+
+    function stepSimulation() {
+      if (!simulationRunning) return;
+      updateShark();
+      renderMap();
+      renderLayers();
+      renderSensors();
+      renderSymphony();
+    }
+
+    // Initial render
+    updateShark();
+    renderMap(); renderLayers(); renderSensors(); renderSymphony();
+
+    // Simulation loop
+    let simInterval = setInterval(stepSimulation, 1000);
+
+    // Pause/resume
+    document.getElementById("sim-btn").onclick = function() {
+      simulationRunning = !simulationRunning;
+      this.textContent = simulationRunning ? "Pause Simulation" : "Resume Simulation";
+      if(simulationRunning) {
+        simInterval = setInterval(stepSimulation, 1000);
+      } else {
+        clearInterval(simInterval);
+      }
+    };
+  </script>
+</body>
+</html>
